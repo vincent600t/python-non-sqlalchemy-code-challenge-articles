@@ -1,116 +1,86 @@
-import pytest
+# classes/many_to_many.py
 
-from classes.many_to_many import Article
-from classes.many_to_many import Magazine
-from classes.many_to_many import Author
+class Article:
+    all = []
+
+    def __init__(self, author, magazine, title):
+        # validate author
+        if not isinstance(author, Author):
+            raise Exception("author must be an Author instance")
+
+        # validate magazine
+        if not isinstance(magazine, Magazine):
+            raise Exception("magazine must be a Magazine instance")
+
+        # validate title
+        if not isinstance(title, str):
+            raise Exception("title must be a string")
+        if not (5 <= len(title) <= 50):
+            raise Exception("title must be between 5 and 50 characters")
+
+        self._title = title  # immutable
+        self.author = author
+        self.magazine = magazine
+
+        Article.all.append(self)
+
+    @property
+    def title(self):
+        return self._title
 
 
-class TestArticle:
-    """Article in many_to_many.py"""
+class Author:
+    def __init__(self, name):
+        if not isinstance(name, str) or len(name.strip()) == 0:
+            raise Exception("name must be a non-empty string")
+        self._name = name
 
-    def test_has_title(self):
-        """Article is initialized with a title"""
-        author = Author("Carry Bradshaw")
-        magazine = Magazine("Vogue", "Fashion")
-        article_1 = Article(author, magazine, "How to wear a tutu with style")
-        article_2 = Article(author, magazine, "Dating life in NYC")
+    @property
+    def name(self):
+        return self._name
 
-        assert article_1.title == "How to wear a tutu with style"
-        assert article_2.title == "Dating life in NYC"
+    def articles(self):
+        return [article for article in Article.all if article.author == self]
 
-    def test_title_is_immutable_str(self):
-        """title is an immutable string"""
-        author = Author("Carry Bradshaw")
-        magazine = Magazine("Vogue", "Fashion")
-        article_1 = Article(author, magazine, "How to wear a tutu with style")
+    def magazines(self):
+        return list(set(article.magazine for article in self.articles()))
 
-        # comment out the next two lines if using Exceptions
-        article_1.title = 500
-        assert article_1.title == "How to wear a tutu with style"
-        
-        assert isinstance(article_1.title, str)
+    def add_article(self, magazine, title):
+        return Article(self, magazine, title)
 
-        # uncomment the next two lines if using Exceptions
-        # with pytest.raises(Exception):
-        #     Article(author, magazine, 500)
+    def topic_areas(self):
+        return list(set(mag.category for mag in self.magazines()))
 
-    def test_title_is_valid(self):
-        """title is between 5 and 50 characters inclusive"""
-        author = Author("Carry Bradshaw")
-        magazine = Magazine("Vogue", "Fashion")
-        article_1 = Article(author, magazine, "How to wear a tutu with style")
 
-        assert 5 <= len(article_1.title) <= 50
+class Magazine:
+    def __init__(self, name, category):
+        if not isinstance(name, str) or not (2 <= len(name) <= 16):
+            raise Exception("name must be a string between 2 and 16 characters")
+        if not isinstance(category, str) or not (2 <= len(category) <= 16):
+            raise Exception("category must be a string between 2 and 16 characters")
 
-        # uncomment the next two lines if using Exceptions
-        # with pytest.raises(Exception):
-        #     Article(author, magazine, "Test")
+        self._name = name
+        self._category = category
 
-        # uncomment the next two lines if using Exceptions
-        # with pytest.raises(Exception):
-        #     Article(author, magazine, "How to wear a tutu with style and walk confidently down the street")
+    @property
+    def name(self):
+        return self._name
 
-    def test_has_an_author(self):
-        """article has an author"""
-        author_1 = Author("Carry Bradshaw")
-        author_2 = Author("Nathaniel Hawthorne")
-        magazine = Magazine("Vogue", "Fashion")
-        article_1 = Article(author_1, magazine, "How to wear a tutu with style")
-        article_2 = Article(author_2, magazine, "Dating life in NYC")
+    @property
+    def category(self):
+        return self._category
 
-        assert article_1.author == author_1
-        assert article_2.author == author_2
+    def articles(self):
+        return [article for article in Article.all if article.magazine == self]
 
-    def test_author_of_type_author_and_mutable(self):
-        """author is of type Author and mutable"""
-        author_1 = Author("Carry Bradshaw")
-        author_2 = Author("Nathaniel Hawthorne")
-        magazine = Magazine("Vogue", "Fashion")
-        article_1 = Article(author_1, magazine, "How to wear a tutu with style")
-        article_2 = Article(author_2, magazine, "Dating life in NYC")
+    def contributors(self):
+        return list(set(article.author for article in self.articles()))
 
-        assert isinstance(article_1.author, Author)
-        assert isinstance(article_2.author, Author)
-        
-        article_1.author = author_2
-        assert isinstance(article_1.author, Author)
-        assert article_1.author.name == "Nathaniel Hawthorne"
+    def article_titles(self):
+        return [article.title for article in self.articles()]
 
-    def test_has_a_magazine(self):
-        """article has a magazine"""
-        author = Author("Carry Bradshaw")
-        magazine_1 = Magazine("Vogue", "Fashion")
-        magazine_2 = Magazine("AD", "Architecture & Design")
-        article_1 = Article(author, magazine_1, "How to wear a tutu with style")
-        article_2 = Article(author, magazine_2, "Dating life in NYC")
-
-        assert article_1.magazine == magazine_1
-        assert article_2.magazine == magazine_2
-
-    def test_magazine_of_type_magazine_and_mutable(self):
-        """magazine is of type Magazine and mutable"""
-        author = Author("Carry Bradshaw")
-        magazine_1 = Magazine("Vogue", "Fashion")
-        magazine_2 = Magazine("AD", "Architecture & Design")
-        article_1 = Article(author, magazine_1, "How to wear a tutu with style")
-        article_2 = Article(author, magazine_2, "Dating life in NYC")
-
-        assert isinstance(article_1.magazine, Magazine)
-        assert isinstance(article_2.magazine, Magazine)
-        
-        article_1.magazine = magazine_2
-        assert isinstance(article_1.magazine, Magazine)
-        assert article_1.magazine.name == "AD"
-
-    def test_get_all_articles(self):
-        """Article class has all attribute"""
-        Article.all = []
-        author = Author("Carry Bradshaw")
-        magazine_1 = Magazine("Vogue", "Fashion")
-        magazine_2 = Magazine("AD", "Architecture & Design")
-        article_1 = Article(author, magazine_1, "How to wear a tutu with style")
-        article_2 = Article(author, magazine_2, "Dating life in NYC")
-
-        assert len(Article.all) == 2
-        assert article_1 in Article.all
-        assert article_2 in Article.all
+    def contributing_authors(self):
+        return [
+            author for author in self.contributors()
+            if len([a for a in Article.all if a.author == author and a.magazine == self]) > 2
+        ]
